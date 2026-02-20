@@ -1,3 +1,6 @@
+import os
+from aiohttp import web
+
 from mistralai import Mistral
 
 import asyncio
@@ -45,9 +48,19 @@ async def filter_messages(message: Message):
     text = chat_response.choices[0].message.content
     await message.answer(text, parse_mode = "Markdown")
 
-
+async def handle(request):
+    return web.Response(text="Bot is alive")
 async def main():
     await bot(DeleteWebhook(drop_pending_updates=True))
+    app = web.Application()
+    app.router.add_get("/", handle)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
